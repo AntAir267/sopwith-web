@@ -1,0 +1,298 @@
+diff --git a/src/sdl/controller.c b/src/sdl/controller.c
+index 0fd2baa..e3c2e6f 100644
+--- a/src/sdl/controller.c
++++ b/src/sdl/controller.c
+@@ -1,3 +1,4 @@
++// Modified 2026-10 by Anthony Airdo for the web build (sopwith-web).
+ //
+ // Copyright(C) 2024 Simon Howard
+ //
+@@ -30,6 +31,10 @@ int controller_bindings[NUM_KEYS] = {
+ 	SDL_CONTROLLER_BUTTON_Y,              // KEY_ACCEL
+ 	SDL_CONTROLLER_BUTTON_B,              // KEY_DECEL
+ 	SDL_CONTROLLER_BUTTON_INVALID,        // KEY_SOUND
++	SDL_CONTROLLER_BUTTON_INVALID,        // KEY_CLIMB
++	SDL_CONTROLLER_BUTTON_INVALID,        // KEY_DIVE
++	SDL_CONTROLLER_BUTTON_INVALID,        // KEY_LEFTWARD
++	SDL_CONTROLLER_BUTTON_INVALID,        // KEY_RIGHTWARD
+ };
+ 
+ static int button_to_key[SDL_CONTROLLER_BUTTON_MAX];
+diff --git a/src/sdl/video.c b/src/sdl/video.c
+index 29e4b07..ce39a9c 100644
+--- a/src/sdl/video.c
++++ b/src/sdl/video.c
+@@ -1,3 +1,4 @@
++// Modified 2026-10 by Anthony Airdo for the web build (sopwith-web).
+ //
+ // Copyright(C) 2001-2005 Simon Howard
+ //
+@@ -80,12 +81,14 @@ static const struct palette video_palettes[] = {
+ 
+ extern bool isNetworkGame(void);
+ 
++// sopwith-web: the arrows fly the plane, Shift drops bombs and F flips. The classic keys
++// (X Z , / for throttle and pull up/down) are still bound, and B and . still work too (below).
+ int keybindings[NUM_KEYS] = {
+ 	0,                    // KEY_UNKNOWN
+ 	SDL_SCANCODE_COMMA,   // KEY_PULLUP
+ 	SDL_SCANCODE_SLASH,   // KEY_PULLDOWN
+-	SDL_SCANCODE_PERIOD,  // KEY_FLIP
+-	SDL_SCANCODE_B,       // KEY_BOMB
++	SDL_SCANCODE_F,       // KEY_FLIP
++	SDL_SCANCODE_LSHIFT,  // KEY_BOMB
+ 	SDL_SCANCODE_SPACE,   // KEY_FIRE
+ 	SDL_SCANCODE_H,       // KEY_HOME
+ 	SDL_SCANCODE_V,       // KEY_MISSILE
+@@ -93,6 +96,21 @@ int keybindings[NUM_KEYS] = {
+ 	SDL_SCANCODE_X,       // KEY_ACCEL
+ 	SDL_SCANCODE_Z,       // KEY_DECEL
+ 	SDL_SCANCODE_S,       // KEY_SOUND
++	SDL_SCANCODE_UP,      // KEY_CLIMB
++	SDL_SCANCODE_DOWN,    // KEY_DIVE
++	SDL_SCANCODE_LEFT,    // KEY_LEFTWARD
++	SDL_SCANCODE_RIGHT,   // KEY_RIGHTWARD
++};
++
++// sopwith-web: keys that work as well as the bindings above: both Shifts drop bombs, and the old
++// defaults for bomb (B) and flip (.) still work. A key bound to something else in the options
++// menu does that instead.
++static const struct { int scancode; enum gamekey key; } extra_keys[] = {
++	{ SDL_SCANCODE_LSHIFT, KEY_BOMB },
++	{ SDL_SCANCODE_RSHIFT, KEY_BOMB },
++	{ SDL_SCANCODE_B,      KEY_BOMB },
++	{ SDL_SCANCODE_F,      KEY_FLIP },
++	{ SDL_SCANCODE_PERIOD, KEY_FLIP },
+ };
+ 
+ // Button that each finger is currently pressing. We assume the user does
+@@ -612,6 +630,11 @@ static enum gamekey TranslateScancode(int sdl_scancode)
+ 			return i;
+ 		}
+ 	}
++	for (i = 0; i < arrlen(extra_keys); ++i) {
++		if (sdl_scancode == extra_keys[i].scancode) {
++			return extra_keys[i].key;
++		}
++	}
+ 
+ 	return KEY_UNKNOWN;
+ }
+@@ -932,6 +955,10 @@ bool Vid_GetCtrlBreak(void)
+ 
+ const char *Vid_KeyName(int key)
+ {
++	// sopwith-web: either Shift works (extra_keys)
++	if (key == SDL_SCANCODE_LSHIFT || key == SDL_SCANCODE_RSHIFT) {
++		return "Shift";
++	}
+ 	return SDL_GetScancodeName(key);
+ }
+ 
+diff --git a/src/swconf.c b/src/swconf.c
+index 2bebec4..4b87174 100644
+--- a/src/swconf.c
++++ b/src/swconf.c
+@@ -84,6 +84,10 @@ static const struct conf_option confoptions[] = {
+ 	{"key_home",       CONF_KEY, {&keybindings[KEY_HOME]}},
+ 	{"key_missile",    CONF_KEY, {&keybindings[KEY_MISSILE]}},
+ 	{"key_starburst",  CONF_KEY, {&keybindings[KEY_STARBURST]}},
++	{"key_climb",      CONF_KEY, {&keybindings[KEY_CLIMB]}},
++	{"key_dive",       CONF_KEY, {&keybindings[KEY_DIVE]}},
++	{"key_left",       CONF_KEY, {&keybindings[KEY_LEFTWARD]}},
++	{"key_right",      CONF_KEY, {&keybindings[KEY_RIGHTWARD]}},
+ 
+ 	{"controller_accelerate", CONF_INT, {&controller_bindings[KEY_ACCEL]}},
+ 	{"controller_decelerate", CONF_INT, {&controller_bindings[KEY_DECEL]}},
+@@ -269,15 +273,21 @@ void swsaveconf(void)
+ 	fclose(fs);
+ }
+ 
++// sopwith-web: the arrow scheme first (see ArrowKeys in video.c), then the classic keys
+ static const struct menuitem keys_menu_items[] = {
++	CONFIG_OPTION("Climb",            "key_climb"),
++	CONFIG_OPTION("Dive",             "key_dive"),
++	CONFIG_OPTION("Throttle left",    "key_left"),
++	CONFIG_OPTION("Throttle right",   "key_right"),
++	CONFIG_OPTION("Fire machine gun", "key_fire"),
++	CONFIG_OPTION("Drop bomb",        "key_dropbomb"),
++	CONFIG_OPTION("Flip",             "key_flip"),
++	CONFIG_OPTION("Navigate home",    "key_home"),
++	{0,   ""},
+ 	CONFIG_OPTION("Accelerate",       "key_accelerate"),
+ 	CONFIG_OPTION("Decelerate",       "key_decelerate"),
+ 	CONFIG_OPTION("Pull up",          "key_pullup"),
+ 	CONFIG_OPTION("Pull down",        "key_pulldown"),
+-	CONFIG_OPTION("Flip",             "key_flip"),
+-	CONFIG_OPTION("Fire machine gun", "key_fire"),
+-	CONFIG_OPTION("Drop bomb",        "key_dropbomb"),
+-	CONFIG_OPTION("Navigate home",    "key_home"),
+ 	{0,   NULL},
+ };
+ 
+diff --git a/src/swgrpha.c b/src/swgrpha.c
+index 388b043..f55c46a 100644
+--- a/src/swgrpha.c
++++ b/src/swgrpha.c
+@@ -1,3 +1,4 @@
++// Modified 2026-10 by Anthony Airdo for the web build (sopwith-web).
+ //
+ // Copyright(C) 1984-2000 David L. Clark
+ // Copyright(C) 2001-2005 Simon Howard
+@@ -72,17 +73,17 @@ static void PrintHelp(void)
+ 	const char *name;
+ 	char buf[64];
+ 	int i;
++	// sopwith-web: the arrow scheme (key2: a second key shown as "key/key2")
+ 	const struct {
+-		char *name; int key;
++		char *name; int key, key2;
+ 	} items[] = {
+-		{ "Accelerate",  KEY_ACCEL },
+-		{ "Decelerate",  KEY_DECEL },
+-		{ "Pull Up",     KEY_PULLUP },
+-		{ "Pull Down",   KEY_PULLDOWN },
+-		{ "Flip Plane",  KEY_FLIP },
++		{ "Climb",       KEY_CLIMB },
++		{ "Dive",        KEY_DIVE },
++		{ "Throttle",    KEY_LEFTWARD, KEY_RIGHTWARD },
+ 		{ "Fire Gun",    KEY_FIRE },
+ 		{ "Drop Bomb",   KEY_BOMB },
+ 		{ "Fly Home",    KEY_HOME },
++		{ "Flip Plane",  KEY_FLIP },
+ 	};
+ 
+ 	// We usually only show the help text in novice mode. However, in
+@@ -111,8 +112,10 @@ static void PrintHelp(void)
+ 
+ 	swcolor(3);
+ 	for (i = 0; i < arrlen(items); i++) {
+-		snprintf(buf, sizeof(buf), "%-11s- %s",
+-		        items[i].name, Vid_KeyName(keybindings[items[i].key]));
++		snprintf(buf, sizeof(buf), "%-11s- %s%s%s",
++		        items[i].name, Vid_KeyName(keybindings[items[i].key]),
++		        items[i].key2 ? "/" : "",
++		        items[i].key2 ? Vid_KeyName(keybindings[items[i].key2]) : "");
+ 		swposcur(1, i + 3);
+ 		swputs(buf);
+ 		if (Vid_HaveController()) {
+diff --git a/src/video.c b/src/video.c
+index 1a68e5f..4bbd5a1 100644
+--- a/src/video.c
++++ b/src/video.c
+@@ -1,3 +1,4 @@
++// Modified 2026-10 by Anthony Airdo for the web build (sopwith-web).
+ //
+ // Copyright(C) 2001-2005 Simon Howard
+ //
+@@ -16,6 +17,7 @@
+ #include <stdint.h>
+ 
+ #include "video.h"
++#include "swmain.h"
+ 
+ // this should be in a header somewhere
+ #define SBAR_HGHT 19
+@@ -40,6 +42,72 @@ unsigned int vid_pitch;
+ 
+ int keysdown[NUM_KEYS];
+ 
++// sopwith-web: which way the plane faces, +1 right or -1 left. Pointing straight up or down,
++// it's the way a pull-up would take it (by whether the plane is flipped).
++static int Facing(OBJECTS *ob)
++{
++	if (ob->ob_angle == ANGLES / 4 || ob->ob_angle == 3 * ANGLES / 4) {
++		return ob->ob_orient ? -1 : 1;
++	}
++	return ob->ob_angle < ANGLES / 4 || ob->ob_angle > 3 * ANGLES / 4 ? 1 : -1;
++}
++
++// sopwith-web: arrow-key flying, relative to the screen. Up raises the nose toward the sky and
++// Down points it at the ground, whichever way the plane faces: the turn is picked when the key
++// goes down and kept while it's held, so holding Up still loops. Left and Right are throttle:
++// the arrow the plane is flying toward speeds up, the other slows down. After steering with the
++// arrows, the plane rolls right side up by itself once no pitch arrow is held (until the classic
++// pull up/down or flip keys are used). It all turns into the game's own commands (pull up/down,
++// accelerate/decelerate, flip), worked out from the plane as it is before this tic's move.
++// classic = the commands from the other keys this tic.
++static int ArrowKeys(int classic)
++{
++	static int held, turn;       // pitch arrow held (+1 up, -1 down), latched turn (+1 = counterclockwise)
++	static bool upright;         // roll right side up when no pitch arrow is held
++	OBJECTS *ob = consoleplayer;
++	int c = 0, pitch, push, side;
++
++	if (ob == NULL || ob->ob_type != PLANE) {
++		return 0;
++	}
++
++	pitch = !keysdown[KEY_CLIMB] == !keysdown[KEY_DIVE] ? 0 : keysdown[KEY_CLIMB] ? 1 : -1;
++	push = !keysdown[KEY_LEFTWARD] == !keysdown[KEY_RIGHTWARD] ? 0 : keysdown[KEY_RIGHTWARD] ? 1 : -1;
++
++	if (classic & (K_FLAPU | K_FLAPD | K_FLIP)) {
++		upright = false;
++	}
++
++	if (pitch != held || ob->ob_athome) {
++		held = pitch;
++		turn = pitch * Facing(ob);
++	}
++	if (turn) {
++		// Pull up turns counterclockwise unless the plane is flipped
++		// (in Harry keys mode it always does).
++		bool flapu_ccw = !ob->ob_orient || conf_harrykeys;
++		c |= (turn > 0) == flapu_ccw ? K_FLAPU : K_FLAPD;
++		upright = true;
++	} else if (upright && !(classic & (K_FLAPU | K_FLAPD))
++	        && (ob->ob_state == FLYING || ob->ob_state == WOUNDED)
++	        && !ob->ob_athome && !ob->ob_home) {
++		// (A flip would also cancel flying home.)
++		// Clearly facing one way (not straight up or down) and
++		// upside down for it: roll over.
++		side = ob->ob_angle % (ANGLES / 2) == ANGLES / 4 ? 0
++		     : ob->ob_angle < ANGLES / 4 || ob->ob_angle > 3 * ANGLES / 4 ? 1 : -1;
++		if ((side < 0 && !ob->ob_orient) || (side > 0 && ob->ob_orient)) {
++			c |= K_FLIP;
++		}
++	}
++
++	if (push) {
++		c |= push == Facing(ob) ? K_ACCEL : K_DEACC;
++	}
++
++	return c;
++}
++
+ int Vid_GetGameKeys(void)
+ {
+ 	int i, c = 0;
+@@ -92,6 +160,8 @@ int Vid_GetGameKeys(void)
+ 		c |= K_STARBURST;
+ 	}
+ 
++	c |= ArrowKeys(c);
++
+ 	// clear bits in key array
+ 	for (i=0; i<NUM_KEYS; ++i) {
+ 		keysdown[i] &= ~KEYDOWN_WAS_PRESSED;
+diff --git a/src/video.h b/src/video.h
+index be38d88..0f806a1 100644
+--- a/src/video.h
++++ b/src/video.h
+@@ -1,3 +1,4 @@
++// Modified 2026-10 by Anthony Airdo for the web build (sopwith-web).
+ //
+ // Copyright(C) 1984-2000 David L. Clark
+ // Copyright(C) 2001-2005 Simon Howard
+@@ -34,6 +35,11 @@ enum gamekey {
+ 	KEY_ACCEL,
+ 	KEY_DECEL,
+ 	KEY_SOUND,
++	// sopwith-web: arrow-key flying, relative to the screen (see ArrowKeys in video.c)
++	KEY_CLIMB,
++	KEY_DIVE,
++	KEY_LEFTWARD,
++	KEY_RIGHTWARD,
+ 	NUM_KEYS,
+ };
+ 
