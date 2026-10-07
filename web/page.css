@@ -1,0 +1,10 @@
+/* SDL Sopwith's own page styles (pkg/emscripten/sopwith.html), plus the site's back link */
+:root { touch-action: pan-x pan-y; }
+body { margin: 0; background-color: black; }
+canvas.emscripten, #loading { position: absolute; left: 0; top: 0; transform: translate(5vw, 5vh); width: 90vw; }
+canvas.emscripten { visibility: hidden; width: 100vw; height: 100vh; transform: none; }
+#back {
+  position: fixed; top: 6px; left: 8px; z-index: 2; padding: 3px 8px; border-radius: 3px;
+  font: 12px/1.2 Verdana, Tahoma, sans-serif; color: #fff; text-decoration: none; background: rgba(0, 0, 0, .45); opacity: .7;
+}
+#back:hover, #back:focus-visible { opacity: 1; }
