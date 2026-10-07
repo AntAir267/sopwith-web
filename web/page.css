@@ -1,3 +1,4 @@
+/* Modified 2026-10 by Anthony Airdo for the web build (sopwith-web). */
 /* SDL Sopwith's own page styles (pkg/emscripten/sopwith.html), plus the site's back link */
 :root { touch-action: pan-x pan-y; }
 body { margin: 0; background-color: black; }

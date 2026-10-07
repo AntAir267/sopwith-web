@@ -1,3 +1,4 @@
+// Modified 2026-10 by Anthony Airdo for the web build (sopwith-web).
 // SDL Sopwith's page logic (pkg/emscripten/sopwith.html), moved out of an inline <script> so the site can serve
 // the game under a strict Content-Security-Policy. Differences: Module.runScript (see engine/csp_run_script.js)
 // replaces eval for the title menu's two calls, the manual opens upstream's copy for this release, there's
