@@ -3,8 +3,9 @@
 #   ./build.sh        clone the pinned release, build it with Emscripten, assemble dist/
 #   ./build.sh ship   the same, then put it on the site (../thegrandpricks/tools/ship-game.py sopwith)
 #
-# The game is upstream SDL Sopwith (github.com/fragglet/sdl-sopwith, GPL-2.0), release 2.9.0, unmodified. It's
-# cloned from github.com/AntAir267/sdl-sopwith, a mirror of upstream, so the source stays where the game is published.
+# The game is upstream SDL Sopwith (github.com/fragglet/sdl-sopwith, GPL-2.0), release 2.9.0, plus patches/
+# (a muffled engine sound and arrow-key controls; see README.md). It's cloned from github.com/AntAir267/sdl-sopwith,
+# a mirror of upstream, so the source stays where the game is published.
 # Upstream's own Emscripten port (embuild.sh + pkg/emscripten) is used as is, with two differences:
 # - it targets the Emscripten in ~/emsdk (6.x) instead of Ubuntu 22.04's 3.1.5. Newer Emscripten refuses to link
 #   configure's test programs as web-only executables, so configure runs with node in ENVIRONMENT and the real
@@ -24,6 +25,15 @@ if [ ! -d "$SRC" ]; then
     git clone -q --branch "$TAG" --depth 1 https://github.com/AntAir267/sdl-sopwith "$SRC"
 fi
 [ "$(git -C "$SRC" rev-parse HEAD)" = "$COMMIT" ] || { echo "build/src is not $TAG ($COMMIT)"; exit 1; }
+
+# patches/, applied to a clean copy of the release whenever they change (only tracked files are reset, so the
+# configured build stays and make rebuilds just what the patches touch)
+STAMP=$ROOT/build/patches.sha256
+if [ "$(cat "$STAMP" 2>/dev/null)" != "$(cat patches/*.patch | sha256sum)" ]; then
+    git -C "$SRC" reset -q --hard
+    for p in patches/*.patch; do git -C "$SRC" apply "$ROOT/$p"; done
+    cat patches/*.patch | sha256sum > "$STAMP"
+fi
 
 command -v emcc >/dev/null || source "${EMSDK:-$HOME/emsdk}/emsdk_env.sh" >/dev/null 2>&1
 
