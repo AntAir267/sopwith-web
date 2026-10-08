@@ -1,9 +1,9 @@
 # sopwith-web
 
 [SDL Sopwith](https://github.com/fragglet/sdl-sopwith) 2.9.0, the classic 1984 biplane game, built for the browser
-with Emscripten for thegrandpricks.com/games/sopwith/. The game is upstream's release with two patches (a muffled
-engine sound and arrow-key controls, see below), built with upstream's own Emscripten port (touch controls, high
-scores saved in the browser). GPL-2.0, like SDL Sopwith (see License).
+with Emscripten for thegrandpricks.com/games/sopwith/. The game is upstream's release with three patches (a muffled
+engine sound, arrow-key controls and online high scores, see below), built with upstream's own Emscripten port
+(touch controls, settings saved in the browser). GPL-2.0, like SDL Sopwith (see License).
 
 ## Build
 
@@ -33,6 +33,29 @@ stays, so make only rebuilds what they touch).
   B bomb, H home), the arrows can be rebound in the options menu, and the beginner's help lists the new keys.
   It all becomes the game's own commands, so the flight model is untouched. Gamepad and touch controls are as
   upstream has them.
+- **0003-online-high-scores**: a new high score also goes to the page (`Module.postHighScore`, see below), and
+  `LoadHighScoreTable` is exported so the page can have the game reload the table. It also closes the high score
+  file after writing it: upstream leaves it open, so in the browser (where the game never exits) the scores
+  stayed in stdio's buffer and the file was left empty.
+
+## Online high scores
+
+The game's own TOP PILOTS table is the site-wide one, kept by the site's Worker (`/api/scores/sopwith` on the
+same origin, so the page's CSP needs nothing new):
+
+- On load, `web/page.js` fetches the top 10 and writes it into `hiscores.txt` (in the game's own format, in the
+  IndexedDB-backed `/libsdl/SDL Sopwith/`) before the game starts. The start waits at most 2.5 s for it; a slower
+  answer is written when it comes and the game reloads its table. Until ten players have beaten them, the game's
+  own pilots (DLC, DG, JHC...) fill the table, with the medals of upstream's default `hiscores.txt`.
+- A new high score (only the default game, single player versus computer, as upstream counts them) is posted
+  with its initials and score, and the medals and ribbons as `extra` (`"medals ribbons"`, the two packed numbers
+  of `hiscores.txt`). The site answers with the new top 10, which replaces the table.
+- Offline, or on any error, nothing is shown and nothing waits: the game keeps the last table it got, plus its
+  own high scores since (those stay local; they're not sent again later).
+
+To try it locally with the site and its API (a local Worker on 127.0.0.1:8792):
+`cd ../thegrandpricks && python3 tools/serve.py 8794 --game sopwith=../sopwith-web/dist`, then
+http://localhost:8794/games/sopwith/ (`--api http://127.0.0.1:1` to see it offline).
 
 ## Changes to upstream's Emscripten build
 
@@ -44,7 +67,8 @@ stays, so make only rebuilds what they touch).
   `promptForInstall()`) go to `Module.runScript` in `web/page.js` instead.
 - `web/` is upstream's `pkg/emscripten/sopwith.html` with its inline script moved to `page.js` and styles to
   `page.css`. The Manual menu item opens upstream's hosted manual for 2.9.0; there's no app manifest, so the
-  install item does nothing. The site adds its own "Back to games" link where `<!-- back link -->` is.
+  install item does nothing. `page.js` also does the online high scores (above). The site adds its own "Back to
+  games" link where `<!-- back link -->` is.
 
 ## License
 
