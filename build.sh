@@ -4,8 +4,8 @@
 #   ./build.sh ship   the same, then put it on the site (../thegrandpricks/tools/ship-game.py sopwith)
 #
 # The game is upstream SDL Sopwith (github.com/fragglet/sdl-sopwith, GPL-2.0), release 2.9.0, plus patches/
-# (a muffled engine sound and arrow-key controls; see README.md). It's cloned from github.com/AntAir267/sdl-sopwith,
-# a mirror of upstream, so the source stays where the game is published.
+# (a muffled engine sound, arrow-key controls and online high scores; see README.md). It's cloned from
+# github.com/AntAir267/sdl-sopwith, a mirror of upstream, so the source stays where the game is published.
 # Upstream's own Emscripten port (embuild.sh + pkg/emscripten) is used as is, with two differences:
 # - it targets the Emscripten in ~/emsdk (6.x) instead of Ubuntu 22.04's 3.1.5. Newer Emscripten refuses to link
 #   configure's test programs as web-only executables, so configure runs with node in ENVIRONMENT and the real
