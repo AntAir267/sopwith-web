@@ -1,0 +1,31 @@
+diff --git a/src/swtitle.c b/src/swtitle.c
+index 26f6eae..5745e24 100644
+--- a/src/swtitle.c
++++ b/src/swtitle.c
+@@ -1,3 +1,4 @@
++// Modified 2026-10 by Anthony Airdo for the web build (sopwith-web).
+ //
+ // Copyright(C) 1984-2000 David L. Clark
+ // Copyright(C) 2001-2005 Simon Howard
+@@ -237,12 +238,6 @@ static enum menu_action OpenManual(const struct menuitem *item)
+ 	emscripten_run_script("openManual()");
+ 	return MENU_ACTION_NONE;
+ }
+-
+-static enum menu_action InstallApp(const struct menuitem *item)
+-{
+-	emscripten_run_script("promptForInstall()");
+-	return MENU_ACTION_NONE;
+-}
+ #endif
+ 
+ #ifndef NO_EXIT
+@@ -262,7 +257,7 @@ static const struct menuitem main_menu_items[] = {
+ 	{'O', "game options", SubMenu, &options_menu},
+ #ifdef __EMSCRIPTEN__
+ 	{'M', "open manual", OpenManual},
+-	{'I', "install as app", InstallApp},
++	// sopwith-web: no "install as app" item (the site's page isn't an installable app)
+ #endif
+ #ifndef NO_EXIT
+ 	{'Q', "quit game", QuitGame},
