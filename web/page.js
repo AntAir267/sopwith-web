@@ -1,8 +1,8 @@
 // Modified 2026-10 by Anthony Airdo for the web build (sopwith-web).
 // SDL Sopwith's page logic (pkg/emscripten/sopwith.html), moved out of an inline <script> so the site can serve
 // the game under a strict Content-Security-Policy. Differences: Module.runScript (see engine/csp_run_script.js)
-// replaces eval for the title menu's two calls, the manual opens upstream's copy for this release, there's
-// no app manifest, so "install" does nothing, the game isn't started twice (see mountFilesystems), and the
+// replaces eval for the title menu's "open manual", which opens upstream's copy for this release, there's no
+// "install as app" (patches/0004-no-install-item), the game isn't started twice (see mountFilesystems), and the
 // high score table is the site's (see Online high scores).
 var MANUAL = "https://fragglet.github.io/sdl-sopwith-builds/tags/sdl-sopwith-2.9.0/doc/sopwith-emscripten.html";
 
@@ -54,11 +54,6 @@ function postHighScore(initials, score, medals, ribbons) {
 function openManual() {
   window.open(MANUAL);
 }
-function promptForInstall() {
-  if (installPrompt != null) {
-    installPrompt.prompt();
-  }
-}
 function programError() {
   canvas.style.visibility = "hidden";
   loadingElement.style.visibility = "visible";
@@ -103,7 +98,7 @@ var Module = {
     programError();
   },
   runScript: function (script) {
-    var known = { "openManual()": openManual, "promptForInstall()": promptForInstall };
+    var known = { "openManual()": openManual };
     if (known[script]) known[script]();
   },
   postHighScore: postHighScore,
@@ -118,9 +113,4 @@ var Module = {
 };
 window.addEventListener("error", (event) => {
   programError();
-});
-var installPrompt = null;
-window.addEventListener("beforeinstallprompt", (event) => {
-  event.preventDefault();
-  installPrompt = event;
 });

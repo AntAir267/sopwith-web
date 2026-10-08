@@ -37,6 +37,8 @@ stays, so make only rebuilds what they touch).
   `LoadHighScoreTable` is exported so the page can have the game reload the table. It also closes the high score
   file after writing it: upstream leaves it open, so in the browser (where the game never exits) the scores
   stayed in stdio's buffer and the file was left empty.
+- **0004-no-install-item**: no "install as app" item on the title menu. The site's page isn't an installable app
+  (no manifest), so upstream's item did nothing; `page.js` no longer has the install prompt code either.
 
 ## Online high scores
 
@@ -63,11 +65,11 @@ http://localhost:8794/games/sopwith/ (`--api http://127.0.0.1:1` to see it offli
   `-sENVIRONMENT=web,node`: newer Emscripten won't link them as web-only executables. The game itself is linked
   web-only, exactly as upstream does.
 - `engine/csp_run_script.js` replaces Emscripten's `emscripten_run_script`, which eval()s the string it's given.
-  The site's Content-Security-Policy has no `'unsafe-eval'`, so the title menu's two calls (`openManual()`,
-  `promptForInstall()`) go to `Module.runScript` in `web/page.js` instead.
+  The site's Content-Security-Policy has no `'unsafe-eval'`, so the title menu's `openManual()` call goes to
+  `Module.runScript` in `web/page.js` instead.
 - `web/` is upstream's `pkg/emscripten/sopwith.html` with its inline script moved to `page.js` and styles to
-  `page.css`. The Manual menu item opens upstream's hosted manual for 2.9.0; there's no app manifest, so the
-  install item does nothing. `page.js` also does the online high scores (above). The site adds its own "Back to
+  `page.css`. The Manual menu item opens upstream's hosted manual for 2.9.0, and the "install as app" item and
+  its code are gone (0004 above). `page.js` also does the online high scores (above). The site adds its own "Back to
   games" link where `<!-- back link -->` is.
 
 ## License
